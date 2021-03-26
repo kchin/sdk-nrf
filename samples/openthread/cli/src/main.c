@@ -7,11 +7,9 @@
 #include <zephyr.h>
 #include <logging/log.h>
 
-#include <sys/printk.h>
-#include <sys/util.h>
-#include <string.h>
+#if defined(CONFIG_SOC_NRF52840)
 #include <usb/usb_device.h>
-#include <drivers/uart.h>
+#endif
 
 #if CONFIG_BT
 #include "ble.h"
@@ -31,27 +29,12 @@ LOG_MODULE_REGISTER(cli_sample, CONFIG_OT_COMMAND_LINE_INTERFACE_LOG_LEVEL);
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(
-			CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	uint32_t dtr = 0;
-
-	if (usb_enable(NULL)) {
-		return;
+#if defined(CONFIG_SOC_NRF52840)
+	while (usb_enable(NULL)) {
+      // retry if failed
+      k_sleep(K_SECONDS(1));
 	}
-
-	/* Poll if the DTR flag was set, optional */
-	while (!dtr) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-	}
-
-	if (strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME) !=
-	    strlen("CDC_ACM_0") ||
-	    strncmp(CONFIG_UART_CONSOLE_ON_DEV_NAME, "CDC_ACM_0",
-		    strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME))) {
-		printk("Error: Console device name is not USB ACM\n");
-
-		return;
-	}
+#endif
 
 	LOG_INF(WELLCOME_TEXT);
 
